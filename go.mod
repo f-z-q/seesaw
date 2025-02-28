@@ -1,4 +1,4 @@
-module github.com/google/seesaw
+module github.com/f-z-q/seesaw
 
 go 1.18
 
