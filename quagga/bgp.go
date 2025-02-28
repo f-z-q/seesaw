@@ -83,11 +83,13 @@ var (
 
 // ParseUptime parses an uptime string and returns the corresponding duration.
 // Time can come in five formats:
-//   07:05:56
-//   2d23h12m
-//   03w5d13h
-//   never
-//   <error>
+//
+//	07:05:56
+//	2d23h12m
+//	03w5d13h
+//	never
+//	<error>
+//
 // See the peer_uptime function in quagga/linc/bgpd/bgpd.c.
 func ParseUptime(uptime string) time.Duration {
 	var w, d, h, m, s int
@@ -222,14 +224,42 @@ func (b *BGP) network(n *net.IPNet, advertise bool) error {
 	return b.vty.Commands(cmds)
 }
 
+func (b *BGP) blackHoleNetwork(n *net.IPNet, advertise bool) error {
+	var prefix string
+	if !advertise {
+		prefix = "no "
+	}
+	family := "ipv4 unicast"
+	if n.IP.To4() == nil {
+		family = "ipv6"
+	}
+	prefixLen, _ := n.Mask.Size()
+	cmds := []string{
+		"configure terminal",
+		fmt.Sprintf("router bgp %d", b.asn),
+		fmt.Sprintf("address-family %s", family),
+		fmt.Sprintf("%snetwork %s/%d %s", prefix, n.IP, prefixLen, "mask 255.255.255.255 route-map BLACKHOLE_ROUTE"),
+		"end",
+	}
+	bgpConfigLock.Lock()
+	defer bgpConfigLock.Unlock()
+	return b.vty.Commands(cmds)
+}
+
 // Advertise requests the BGP daemon to advertise the specified network.
-func (b *BGP) Advertise(n *net.IPNet) error {
+func (b *BGP) Advertise(n *net.IPNet, isBlackHole bool) error {
+	if isBlackHole {
+		return b.blackHoleNetwork(n, true)
+	}
 	return b.network(n, true)
 }
 
 // Withdraw requests the BGP daemon to withdraw advertisements for the
 // specified network.
-func (b *BGP) Withdraw(n *net.IPNet) error {
+func (b *BGP) Withdraw(n *net.IPNet, isBlackHole bool) error {
+	if isBlackHole {
+		return b.blackHoleNetwork(n, false)
+	}
 	return b.network(n, false)
 }
 
