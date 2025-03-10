@@ -238,7 +238,7 @@ func (b *BGP) blackHoleNetwork(n *net.IPNet, advertise bool) error {
 		"configure terminal",
 		fmt.Sprintf("router bgp %d", b.asn),
 		fmt.Sprintf("address-family %s", family),
-		fmt.Sprintf("%snetwork %s/%d %s", prefix, n.IP, prefixLen, "mask 255.255.255.255 route-map BLACKHOLE_ROUTE"),
+		fmt.Sprintf("%snetwork %s/%d %s", prefix, n.IP, prefixLen, "route-map BLACKHOLE_ROUTE"),
 		"end",
 	}
 	bgpConfigLock.Lock()
