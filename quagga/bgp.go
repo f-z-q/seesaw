@@ -230,15 +230,17 @@ func (b *BGP) blackHoleNetwork(n *net.IPNet, advertise bool) error {
 		prefix = "no "
 	}
 	family := "ipv4 unicast"
+	routMap := "route-map BLACKHOLE_ROUTE"
 	if n.IP.To4() == nil {
 		family = "ipv6"
+		routMap = "route-map BLACKHOLE_ROUTE_v6"
 	}
 	prefixLen, _ := n.Mask.Size()
 	cmds := []string{
 		"configure terminal",
 		fmt.Sprintf("router bgp %d", b.asn),
 		fmt.Sprintf("address-family %s", family),
-		fmt.Sprintf("%snetwork %s/%d %s", prefix, n.IP, prefixLen, "route-map BLACKHOLE_ROUTE"),
+		fmt.Sprintf("%snetwork %s/%d %s", prefix, n.IP, prefixLen, routMap),
 		"end",
 	}
 	bgpConfigLock.Lock()
