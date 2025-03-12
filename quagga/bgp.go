@@ -224,16 +224,15 @@ func (b *BGP) network(n *net.IPNet, advertise bool) error {
 	return b.vty.Commands(cmds)
 }
 
-func (b *BGP) blackHoleNetwork(n *net.IPNet, advertise bool) error {
+func (b *BGP) blackHoleNetwork(n *net.IPNet, advertise bool, routMap string) error {
 	var prefix string
 	if !advertise {
 		prefix = "no "
 	}
 	family := "ipv4 unicast"
-	routMap := "route-map BLACKHOLE_ROUTE"
 	if n.IP.To4() == nil {
 		family = "ipv6"
-		routMap = "route-map BLACKHOLE_ROUTE_v6"
+		routMap = routMap + "_v6"
 	}
 	prefixLen, _ := n.Mask.Size()
 	cmds := []string{
@@ -249,18 +248,18 @@ func (b *BGP) blackHoleNetwork(n *net.IPNet, advertise bool) error {
 }
 
 // Advertise requests the BGP daemon to advertise the specified network.
-func (b *BGP) Advertise(n *net.IPNet, isBlackHole bool) error {
+func (b *BGP) Advertise(n *net.IPNet, isBlackHole bool, routMap string) error {
 	if isBlackHole {
-		return b.blackHoleNetwork(n, true)
+		return b.blackHoleNetwork(n, true, routMap)
 	}
 	return b.network(n, true)
 }
 
 // Withdraw requests the BGP daemon to withdraw advertisements for the
 // specified network.
-func (b *BGP) Withdraw(n *net.IPNet, isBlackHole bool) error {
+func (b *BGP) Withdraw(n *net.IPNet, isBlackHole bool, routMap string) error {
 	if isBlackHole {
-		return b.blackHoleNetwork(n, false)
+		return b.blackHoleNetwork(n, false, routMap)
 	}
 	return b.network(n, false)
 }
